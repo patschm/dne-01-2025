@@ -1,6 +1,7 @@
 ﻿
 using System.IO.Compression;
 using System.Text;
+using System.Xml;
 
 namespace Stromingen;
 
@@ -13,8 +14,29 @@ internal class Program
         //WriteModern();
         //ReadModern();
         //WriteModernZipped();
-        ReadModernZipped();
+        //ReadModernZipped();
+        WriteXml();
     }
+
+    private static void WriteXml()
+    {
+        Directory.CreateDirectory(@"E:\test");
+        FileInfo file = new FileInfo(@"E:\test\demo3.xml");
+        if (file.Exists)
+        {
+            file.Delete();
+        }
+        FileStream fs = file.Create();
+        XmlWriter writer = XmlWriter.Create(fs);
+        writer.WriteStartElement("root");
+        writer.WriteStartElement("person");
+        writer.WriteAttributeString("id", "1");
+        writer.WriteStartElement("first-name");
+        writer.WriteString("Jane");
+
+        writer.Close();
+    }
+
     private static void ReadModernZipped()
     {
         FileStream fs = File.OpenRead(@"E:\test\demo2.zip");
