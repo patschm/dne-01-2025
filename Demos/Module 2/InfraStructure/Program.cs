@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Threading.Channels;
 
 // Used Nuget packages:
 // Microsoft.Extensions.Configuration
@@ -20,12 +19,12 @@ internal class Program
 {
     static void Main(string[] args)
     {
-        //EnvironmentSettings();
+        EnvironmentSettings();
         //Configuration();
         //Secrets();
         //Logging();
         //DependencyInjection();
-        AllInOne();
+        //AllInOne();
     }
 
     private static void EnvironmentSettings()
@@ -62,39 +61,41 @@ internal class Program
         //bld.AddXmlFile("config.xml");
         //bld.AddIniFile("startup.ini");
         IConfiguration config = bld.Build();
-        //config.GetReloadToken().RegisterChangeCallback(obj => Console.WriteLine("Gewijzigd"), null);
-        var section = config.GetSection("MyConfiguration");
-        var conf = new MyConfiguration();
 
-        //do
-        //{
-        //var conf = section.Get<MyConfiguration>();
-           section.Bind(conf);
-           Console.WriteLine(conf.Name);
-            //Thread.Sleep(5000);
-        //}
-        //while (true);
+        // Reload notificaties
+        config.GetReloadToken().RegisterChangeCallback(obj => Console.WriteLine("Gewijzigd"), null);
+        
+        // Read section
+        var section = config.GetSection("MyConfiguration");
+        var myConf = section.Get<MyConfiguration>();
+        Console.WriteLine(myConf?.Name);
+        // Or
+        var cfg = new MyConfiguration();
+        section.Bind(cfg);
+        Console.WriteLine(cfg.Address);
+
 
         // Read single entry
-        //var nameSection = config.GetSection("MyConfiguration:Name");
-        //Console.WriteLine(nameSection.Value);
-        //// Read collection. Use extensions from package Microsoft.Extensions.Configuration.Binder
-        //var hobbiesSection = config.GetSection("MyConfiguration:Hobbies");
-        //var data1 = hobbiesSection.Get<string[]>();
-        //Console.WriteLine(string.Join(',', data1!));
-        //// Read complex object
-        //var addressSection = config.GetSection("MyConfiguration:Address");
-        //System.Console.WriteLine("Test Value: " + addressSection.Value);
-        //var address = addressSection.Get<Address>();
-        //Console.WriteLine($"{address?.StreetName} {address?.Number}");
-        //// Alternatively:
-        //var address2 = new Address();
-        //addressSection.Bind(address2);
-        //Console.WriteLine($"{address2?.StreetName} {address2?.Number}");
+        var nameSection = config.GetSection("MyConfiguration:Name");
+        Console.WriteLine(nameSection.Value);
+        // Read collection. Use extensions from package Microsoft.Extensions.Configuration.Binder
+        var hobbiesSection = config.GetSection("MyConfiguration:Hobbies");
+        var data1 = hobbiesSection.Get<string[]>();
+        Console.WriteLine(string.Join(',', data1!));
+        // Read complex object
+        var addressSection = config.GetSection("MyConfiguration:Address");
+        Console.WriteLine("Test Value: " + addressSection.Value);
+        var address = addressSection.Get<Address>();
+        Console.WriteLine($"{address?.StreetName} {address?.Number}");
+        // Alternatively:
+        var address2 = new Address();
+        addressSection.Bind(address2);
+        Console.WriteLine($"{address2?.StreetName} {address2?.Number}");
 
     }
     private static void Secrets()
     {
+        // Only usefull during development. In production use KeyVault services
         IConfigurationBuilder bld = new ConfigurationBuilder();
         bld.SetBasePath(Environment.CurrentDirectory);
         bld.AddJsonFile("appsettings.json", optional:true, reloadOnChange:false);
@@ -122,12 +123,12 @@ internal class Program
 
         var factory = LoggerFactory.Create(config => {
             // In code:
-            //config.AddFilter((cat, lvl) =>
-            //{
-            //    return cat == typeof(LogVictim).FullName && lvl >= LogLevel.Trace;
-            //});
+            config.AddFilter((cat, lvl) =>
+            {
+                return cat == typeof(LogVictim).FullName && lvl >= LogLevel.Trace;
+            });
             // In config:
-            config.AddConfiguration(config2.GetSection("Logging"));
+            //config.AddConfiguration(config2.GetSection("Logging"));
 
             config.ClearProviders();
             // From package: Microsoft.Extensions.Logging.Console
@@ -150,25 +151,10 @@ internal class Program
 
         //builder.AddHostedService<ConsoleHost>();
        // builder.AddTransient<ICounter, Counter>();
-        builder.AddScoped<ICounter, Counter>();
+        //builder.AddScoped<ICounter, Counter>();
         //builder.AddSingleton<ICounter, Counter>();
 
         var provider = builder.BuildServiceProvider();
-
-
-        // var service = provider.GetRequiredService<ConsoleHost>();
-        //service.StartAsync(CancellationToken.None).Wait();
-
-        //var ctr=provider.GetRequiredService<ICounter>();
-        //ctr.Increment();
-        //ctr.Show();
-        //ctr = provider.GetRequiredService<ICounter>();
-        //ctr.Increment();
-        //ctr.Show();
-        //ctr = provider.GetRequiredService<ICounter>();
-        //ctr.Increment();
-        //ctr.Show();
-        //return;
 
         Console.WriteLine("==== Run 1 ====");
         using (var scope = provider.CreateScope())
@@ -198,9 +184,11 @@ internal class Program
         // Use Host for all non-web applications.
         // WebHost (net 5.0 or lower) is the one needed for aspnet webapi/mvc
         // WebApplication (net 6 or higher) is the one needed for aspnet webapi/mvc
+        // HostApplicationBuilder (net 8 and higher)
+        
+        var builder = new HostApplicationBuilder();
 
-
-        var builder = Host.CreateApplicationBuilder();
+        //var builder = Host.CreateApplicationBuilder();
         builder.Configuration.AddJsonFile("appsettings.json"); // Not needed. Is Default
         builder.Services.AddHostedService<ConsoleHost>();
        // host.Services.AddHostedService<ConsoleHost2>();
