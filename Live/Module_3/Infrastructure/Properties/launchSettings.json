@@ -3,7 +3,8 @@
     "Infrastructure": {
       "commandName": "Project",
       "environmentVariables": {
-        "Bla": "Launch"
+        "Bla": "Launch",
+        "DOTNET_ENVIRONMENT": "Production"
       }
     }
   }
