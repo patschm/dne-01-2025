@@ -19,8 +19,8 @@ public class Program
         //BasicClientAsync();
         //DIClient();
         //StrongClient();
-        PostClient();
-        //AuthClient
+        //PostClient();
+        AuthClient();
         Console.ReadLine();
     }
 
@@ -30,23 +30,15 @@ public class Program
         //var handler = new SocketsHttpHandler();
         //handler.MaxConnectionsPerServer = 1;
         //handler.PooledConnectionLifetime = TimeSpan.FromMinutes(15);
-        //client = new HttpClient(handler);
+        var client = new HttpClient();
 
         client.BaseAddress = new Uri("https://localhost:8001/");
-        for (int i = 0; i < 100; i++)
+        var response = await client.GetAsync("WeatherForecast");
+        if (response.IsSuccessStatusCode)
         {
-            //HttpClient client = new HttpClient();
-            //client.BaseAddress = new Uri("https://localhost:8001/");
-            var response = await client.GetAsync("WeatherForecast");
-            if (response.IsSuccessStatusCode)
-            {
-                Console.WriteLine(response.Content.Headers.ContentType);
-                var data = await response.Content.ReadAsStringAsync();
-                Console.Write(data);
-                //var strData = pt.Result.Content.ReadAsStringAsync().Result;
-                //Console.Write(i + ", ");
-                //Console.WriteLine(strData);
-            }
+            Console.WriteLine(response.Content.Headers.ContentType);
+            var data = await response.Content.ReadAsStringAsync();
+            Console.Write(data);
         }
     }
 
@@ -55,20 +47,21 @@ public class Program
         var factory = new DefaultServiceProviderFactory();
         var services = new ServiceCollection();
         var builder = factory.CreateBuilder(services);
+
         builder.AddHttpClient("weather", opts =>
         {
             opts.BaseAddress = new Uri("https://localhost:8001/");
         })
-           .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Default is 4 minutes
-            //.AddPolicyHandler(msg =>
-            //{
-            //    // Retry mechanisms
-            //    // From Microsoft.Extensions.Http.Polly
-            //    return HttpPolicyExtensions
-            //        .HandleTransientHttpError()
-            //        .OrResult(m => m.StatusCode == HttpStatusCode.NotFound)
-            //        .WaitAndRetryAsync(3, retAttempt => TimeSpan.FromSeconds(5));
-            //});
+          .SetHandlerLifetime(TimeSpan.FromMinutes(1)); // Default is 4 minutes
+           //                                              //.AddPolicyHandler(msg =>
+           //                                              //{
+           //                                              //    // Retry mechanisms
+           //                                              //    // From Microsoft.Extensions.Http.Polly
+           //                                              //    return HttpPolicyExtensions
+           //                                              //        .HandleTransientHttpError()
+           //                                              //        .OrResult(m => m.StatusCode == HttpStatusCode.NotFound)
+           //                                              //        .WaitAndRetryAsync(3, retAttempt => TimeSpan.FromSeconds(5));
+           //                                              //});
 
         var provider = builder.BuildServiceProvider();
 
@@ -86,6 +79,7 @@ public class Program
         var factory = new DefaultServiceProviderFactory();
         var services = new ServiceCollection();
         var builder = factory.CreateBuilder(services);
+
         builder.AddHttpClient<WeatherForecastService>(opts =>
         {
             opts.BaseAddress = new Uri("https://localhost:8001/");
@@ -104,24 +98,15 @@ public class Program
     }
     private static void PostClient()
     {
-        var factory = new DefaultServiceProviderFactory();
-        var services = new ServiceCollection();
-        var builder = factory.CreateBuilder(services);
-        builder.AddHttpClient("weather", opts =>
-        {
-            opts.BaseAddress = new Uri("https://localhost:8001/");
-        });
-        var provider = builder.BuildServiceProvider();
-
-        var clientFactory = provider.GetRequiredService<IHttpClientFactory>();
-        var client = clientFactory.CreateClient("weather");
+        var client = new HttpClient();
+        client.BaseAddress = new Uri("https://localhost:8001/");
 
         var item = new WeatherForecast { Date = DateTime.Now, Summary = "Mottig", TemperatureC = 31 };
         var content = new StringContent(JsonConvert.SerializeObject(item));
-        content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+         content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
         var response = client.PostAsync("WeatherForecast", content).Result;
-        
-        
+
+
         if (response.IsSuccessStatusCode)
         {
             Console.WriteLine(response.Headers.Location);
@@ -135,7 +120,8 @@ public class Program
         builder.AddHttpClient("weather", opts =>
         {
             opts.BaseAddress = new Uri("https://localhost:8001/");
-            opts.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", "token");
+            opts.DefaultRequestHeaders.Authorization 
+                = new AuthenticationHeaderValue("bearer", "token");
         });
         //.ConfigurePrimaryHttpMessageHandler(() =>
         //{

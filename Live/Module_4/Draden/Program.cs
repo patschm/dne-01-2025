@@ -1,4 +1,6 @@
 ﻿
+using System.Net.Sockets;
+
 namespace Draden;
 
 internal class Program
@@ -11,11 +13,111 @@ internal class Program
         //TaskChaining();
         //TaskFouten();
         //TaskCancels();
-        TaskKewl();
+        //TaskKewl();
+        //AdvancedTaskAsync();
+        //NogMeerAdvanced();
+        SemaphoreGarage();
 
         Console.WriteLine("Einde programma");
         //Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
         Console.ReadLine();
+    }
+
+
+    private static void SemaphoreGarage()
+    {
+        var rnd = new Random();
+        Semaphore trafficLight = new Semaphore(25, 25);
+
+        ThreadPool.SetMinThreads(100, 100);
+        var max = 0;
+        for (var i = 0; i < 100; i++)
+        {
+            ThreadPool.QueueUserWorkItem(Car, i);
+        }
+
+        void Car(object nr)
+        {
+            if (max >= 25)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Car {nr} arriving parking lot...");
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine($"Car {nr} arriving parking lot...");
+                Console.ResetColor();
+            }
+            trafficLight.WaitOne();
+            //lock (locker)
+           // {
+                max++;
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.WriteLine($"\tCar {nr} driving into the parking lot ({25 - max} spaces left)");
+                Console.ResetColor();
+            //}
+            var delay = rnd.Next(1000, 10000);
+            Thread.Sleep(20000 + delay);
+            Console.WriteLine($"Car {nr} driving out...");
+            int semnr = trafficLight.Release();
+            Console.WriteLine($"Sem Nr {semnr}, {max}");
+            Interlocked.Decrement(ref max);
+            //lock(locker) max--;
+        }
+    }
+
+
+    static object stokje = new object();
+
+    private static void NogMeerAdvanced()
+    {
+        int counter = 0;
+
+        //ThreadPool.SetMinThreads(10, 10);
+        Parallel.For(0, 10, idx =>
+        {
+            //Monitor.Enter(stokje);
+            lock (stokje)
+            {
+                Console.WriteLine($"Thread: {Thread.CurrentThread.ManagedThreadId}");
+                int tmp = counter;
+                tmp++;
+                Task.Delay(30).Wait();
+                counter = tmp;
+                Console.WriteLine(counter);
+            }
+            //Monitor.Exit(stokje);
+        });
+    }
+
+    private static async Task AdvancedTaskAsync()
+    {
+        int a = 0;
+        int b = 0;
+
+        AutoResetEvent zl1 = new AutoResetEvent(false);
+        AutoResetEvent zl2 = new AutoResetEvent(false);
+
+        var t1 = Task.Run(() =>
+        {
+            Task.Delay(1000).Wait();
+            a = 10;
+            //zl1.Set();
+        });
+        var t2 = Task.Run(() =>
+        {
+            Task.Delay(2000).Wait();
+            b = 30;
+            zl2.Set();
+        });
+
+
+        //WaitHandle.WaitAll([zl1, zl2]);
+        //Task.WaitAll(t1, t2);
+        await Task.WhenAll(t1, t2);
+        Console.WriteLine(a + b);
     }
 
     private static async void TaskKewl()
@@ -33,7 +135,8 @@ internal class Program
 
         try
         {
-            await Task.Run(() => {
+            await Task.Run(() =>
+            {
                 Console.WriteLine("Start");
                 throw new Exception("Ooops");
             });
@@ -67,22 +170,24 @@ internal class Program
 
     private static void TaskFouten()
     {
-       // try
+        // try
         //{
-            Task.Run(() => {
-                Console.WriteLine("Start");
-                throw new Exception("Ooops");
-            }).ContinueWith(pt=> {
-                Console.WriteLine(pt.Status);
-                if (pt.Exception != null)
-                {
-                    Console.WriteLine(pt.Exception.InnerException);
-                }
-            });
-       // }
+        Task.Run(() =>
+        {
+            Console.WriteLine("Start");
+            throw new Exception("Ooops");
+        }).ContinueWith(pt =>
+        {
+            Console.WriteLine(pt.Status);
+            if (pt.Exception != null)
+            {
+                Console.WriteLine(pt.Exception.InnerException);
+            }
+        });
+        // }
         //catch (Exception ex)
         //{
-            //Console.WriteLine(ex.ToString());
+        //Console.WriteLine(ex.ToString());
         //}
     }
 
@@ -94,7 +199,7 @@ internal class Program
             int result = LongAdd(2, 3);
             return result;
         });
-        
+
         t1.Start();
 
         t1.ContinueWith(vorigeTaak =>

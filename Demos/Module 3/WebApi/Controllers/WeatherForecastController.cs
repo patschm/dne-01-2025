@@ -18,6 +18,11 @@ namespace WebApi.Controllers
             _logger = logger;
         }
 
+        public IActionResult Post([FromBody]string data)
+        {
+            return Created();
+        }
+
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
