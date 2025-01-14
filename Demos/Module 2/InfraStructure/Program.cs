@@ -185,7 +185,8 @@ internal class Program
         // WebHost (net 5.0 or lower) is the one needed for aspnet webapi/mvc
         // WebApplication (net 6 or higher) is the one needed for aspnet webapi/mvc
         // HostApplicationBuilder (net 8 and higher)
-        
+        // DistributedApplicationBuilder (net 8 and higher)
+
         var builder = new HostApplicationBuilder();
 
         //var builder = Host.CreateApplicationBuilder();
