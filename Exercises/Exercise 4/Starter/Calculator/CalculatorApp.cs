@@ -13,29 +13,9 @@ public partial class CalculatorApp : Form
     {
         if (int.TryParse(txtA.Text, out int a) && int.TryParse(txtB.Text, out int b)) 
         {
-            //var result = LongAdd(a, b);
-            //UpdateAnswer(result);
-
-            //Task.Run(() => LongAdd(a, b))
-            //    .ContinueWith(pt => { 
-            //        _ctx?.Send(UpdateAnswer, pt.Result);
-            //    });
-
-            //LongAddAsync(a, b)
-            //    .ContinueWith(pt => _ctx?.Send(UpdateAnswer, pt.Result)); 
-
-            int result = await LongAddAsync(a, b);
+            var result = LongAdd(a, b);
             UpdateAnswer(result);
-
-            // Dead lock
-            //int result = DoeIets(a, b).Result;
-            //UpdateAnswer(result);
         }
-    }
-
-    async Task<int> DoeIets(int a, int b)
-    {
-        return await LongAddAsync(a, b);
     }
 
     private void UpdateAnswer(object? result)
