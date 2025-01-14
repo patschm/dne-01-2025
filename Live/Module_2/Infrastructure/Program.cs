@@ -1,7 +1,8 @@
 ﻿
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
 
 namespace Infrastructure;
 class Test
@@ -14,7 +15,77 @@ internal class Program
     {
         //Configuraties();
         //Environments();
-        Loggings();
+        //Loggings();
+        //DepInj();
+        AllInOne();
+    }
+
+    private static void AllInOne()
+    {
+        var builder1 = new HostApplicationBuilder();
+        builder1.Services.AddSingleton<ICounter, Counter>();
+        var host = builder1.Build();
+
+        //host.Services.GetRequiredService();
+
+        var builder =  Host.CreateDefaultBuilder();
+        builder.ConfigureServices(sc =>
+        {
+            sc.AddTransient<ICounter, Counter>();
+            sc.AddTransient<CounterHost>();
+        });
+        var app =builder.Build();
+        
+        app.Services.GetRequiredService<CounterHost>().Demo();
+    }
+
+    private static void DepInj()
+    {
+        ServiceCollection services = new ServiceCollection();
+        //services.AddKeyedScoped<ICounter, Counter>("no1");
+        //services.AddKeyedScoped<ICounter, Counter2>("no2");
+        services.AddScoped<ICounter, Counter>();
+        services.AddScoped<ICounter, Counter2>();
+
+        services.AddTransient<CounterHost>();
+
+        var factory = new DefaultServiceProviderFactory();
+        var builder = factory.CreateBuilder(services);
+        var provider = builder.BuildServiceProvider();
+
+        var scp1 = provider.CreateScope();
+        //ICounter cnt = scp1.ServiceProvider.GetRequiredKeyedService<ICounter>("no1");
+        ICounter cnt = scp1.ServiceProvider.GetRequiredService<ICounter>();
+        cnt.Increment();
+        cnt.Increment();
+        cnt.Show();
+
+        var scp2 = provider.CreateScope();
+        //var cnt2 = scp2.ServiceProvider.GetRequiredKeyedService<ICounter>("no2");
+        var cnt2 = scp2.ServiceProvider.GetRequiredService<ICounter>();
+        cnt2.Increment();
+        cnt2.Increment();
+        cnt2.Show();
+
+        //var cnt3= scp1.ServiceProvider.GetRequiredService<ICounter>();
+        //cnt3.Increment();
+        //cnt3.Increment();
+        //cnt3.Show();
+
+        Console.WriteLine("=============================");
+        CounterHost ch = provider.GetRequiredService<CounterHost>();
+        ch.Demo();
+
+
+
+
+        //ICounter c = new Counter();
+        //c.Increment();
+        //c.Increment();
+        //c.Show();
+
+        //CounterHost host = new CounterHost(c);
+        //host.Demo();
     }
 
     private static void Loggings()
@@ -24,7 +95,8 @@ internal class Program
         cbld.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
         var config = cbld.Build();
 
-        var fact = LoggerFactory.Create(conf => {
+        var fact = LoggerFactory.Create(conf =>
+        {
             //conf.AddFilter((cat, lgolvl) => {
             //    Console.WriteLine(cat);
             //    return lgolvl >= LogLevel.Trace && cat == typeof(Program).FullName;
@@ -58,7 +130,7 @@ internal class Program
     {
         var env = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT");
         ConfigurationBuilder cbld = new ConfigurationBuilder();
-        
+
         cbld.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
         cbld.AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: false);
         cbld.AddUserSecrets<Program>();
@@ -68,10 +140,10 @@ internal class Program
         var section = config.GetSection("First");
         Console.WriteLine(section.Value);
 
-        var constr =  config.GetConnectionString("CONSTR1");
+        var constr = config.GetConnectionString("CONSTR1");
         Console.WriteLine(constr);
 
-        section= config.GetSection("MyApp:Name");
+        section = config.GetSection("MyApp:Name");
         Console.WriteLine(section.Value);
 
         section = config.GetSection("MyApp:Age");

@@ -2,10 +2,8 @@ namespace Calculator;
 
 public partial class CalculatorApp : Form
 {
-    private readonly SynchronizationContext? _ctx;
     public CalculatorApp()
     {
-        _ctx = SynchronizationContext.Current;
         InitializeComponent();
     }
 
